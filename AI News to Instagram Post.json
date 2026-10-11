@@ -1,0 +1,286 @@
+{
+  "name": "AI News to Instagram Post",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "f605c508-70f9-4e23-9e44-2f3f80476a24",
+      "name": "Every Day 10 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "news",
+        "query": "artificial intelligence AI news",
+        "count": 5,
+        "additionalParameters": {
+          "freshness": "pd"
+        }
+      },
+      "id": "bb2233a5-049c-4d6b-af0a-a485824f862d",
+      "name": "Get Latest AI News",
+      "type": "@brave/n8n-nodes-brave-search.braveSearch",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        0
+      ],
+      "credentials": {
+        "braveSearchApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Here are today's latest AI news results (JSON):\n{{ JSON.stringify($input.all().map(i => i.json)).slice(0, 6000) }}\n\nPick the single most interesting story. Return JSON with:\n- \"caption\": an engaging Instagram caption (max 1200 characters) summarizing the news in simple words, with 1-2 emojis and 8-12 relevant hashtags at the end.\n- \"image_prompt\": a short, vivid prompt (max 300 characters) for an eye-catching square social media image about this story. No text or logos in the image."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "name": "instagram_post",
+              "schema": "{\"type\":\"object\",\"properties\":{\"caption\":{\"type\":\"string\"},\"image_prompt\":{\"type\":\"string\"}},\"required\":[\"caption\",\"image_prompt\"],\"additionalProperties\":false}",
+              "strict": true
+            }
+          }
+        }
+      },
+      "id": "aaabc11b-0268-4f03-91ea-fb11846693b9",
+      "name": "Write Caption and Image Prompt",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "caption",
+              "name": "caption",
+              "type": "string",
+              "value": "={{ $json.output[0].content[0].text.caption }}"
+            },
+            {
+              "id": "image_url",
+              "name": "image_url",
+              "type": "string",
+              "value": "=https://image.pollinations.ai/prompt/{{ encodeURIComponent($json.output[0].content[0].text.image_prompt) }}?width=1080&height=1080&nologo=true&seed={{ $now.toMillis() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72e09628-29d6-47dd-b2fa-3e52d4a45417",
+      "name": "Create Image URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "<__PLACEHOLDER_VALUE__Instagram Business Account ID__>",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "image_url",
+                "value": "={{ $json.image_url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $json.caption }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "3ad35e3c-0d6f-4f98-b995-575574c9519b",
+      "name": "Upload Image to Instagram",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        896,
+        0
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "xnmggrRuxa5j29Qs",
+          "name": "Facebook Graph account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "id": "4be92fd9-06d3-4eb6-acc6-8c1acc720768",
+      "name": "Wait for Processing",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        0
+      ],
+      "webhookId": "3062a31d-27dd-4bce-a666-3dbcc1607a95"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "<__PLACEHOLDER_VALUE__Instagram Business Account ID__>",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $('Upload Image to Instagram').item.json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "2ca5ee24-0f08-4fb5-9cfa-36f86d33562e",
+      "name": "Publish Instagram Post",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        0
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "xnmggrRuxa5j29Qs",
+          "name": "Facebook Graph account 5"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Day 10 AM": {
+      "main": [
+        [
+          {
+            "node": "Get Latest AI News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest AI News": {
+      "main": [
+        [
+          {
+            "node": "Write Caption and Image Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Caption and Image Prompt": {
+      "main": [
+        [
+          {
+            "node": "Create Image URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image URL": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Instagram": {
+      "main": [
+        [
+          {
+            "node": "Wait for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Processing": {
+      "main": [
+        [
+          {
+            "node": "Publish Instagram Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "633ba5ba-21ad-42d8-a53d-8473b6b8d2cb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fee44b896fb8318f77a93ed57fe46672836c216e20bcae8d78eeea922bec96a4"
+  },
+  "nodeGroups": [],
+  "id": "OAScxAGglfXEpyqh",
+  "tags": []
+}

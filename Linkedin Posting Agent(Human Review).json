@@ -1,0 +1,377 @@
+{
+  "name": "Linkedin Posting Agent(Human Review)...",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Linkedin Posting agent",
+        "formDescription": "Upload your idea to create a Linkedin Post",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Idea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -976,
+        16
+      ],
+      "id": "3a3e4d25-9ecf-450b-aec7-752158d330c3",
+      "name": "On form submission",
+      "webhookId": "9be56fcd-1ea4-4a81-af9c-5e32963c9d02"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        208
+      ],
+      "id": "4e95a93a-03ca-4462-a362-0b0bbc272bbf",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Idea : {{ $json.Idea }}\nYou are pprofessional content creation writter, please create a latest and solid content post for the above idea.\nDon't include any line like this \"Absolutely! Here’s a professional, up-to-date content post for the idea:\" just give me a clear post, no emojis and just include 4 hashtags related to the topic in small alphabets.\nRestrict the post content to 1000 characters.",
+        "options": {
+          "systemMessage": "You are a helpful assistant\nALways use \"Wikipedia\" tool for creating any post. Always fetch the latest data from wikipedia and then only create a solid post"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -784,
+        16
+      ],
+      "id": "fc4ccd2c-a55b-4f3d-b8c5-46413d3fba06",
+      "name": "Post Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Post Text : {{ $json.output }}\n\nUse are a professional Linked image post prompt generator. Kindly generate a prompt for the above post text. Don't include any emojis and quotations in the prompt. Prompt should be under 500 characters",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0a27c8b9-26e1-482f-bea5-a37cf01073ef",
+      "name": "Post Prompt"
+    },
+    {
+      "parameters": {
+        "person": "HBhHne-X5B",
+        "text": "={{ $('Post Text').item.json.output }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        560,
+        0
+      ],
+      "id": "3dea374f-c997-4353-bbb9-66950238538f",
+      "name": "Create a post",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "XuaOmotFDUxspx9R",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "sadiasahar86@gmail.com",
+        "subject": "Linked Post Approval Required?",
+        "message": "=Linkedin Post : {{ $json.output }}\n",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -432,
+        16
+      ],
+      "id": "62c90430-921f-4593-ace0-5a34ccf1a2e3",
+      "name": "Send a message",
+      "webhookId": "978ddc9e-db66-41d0-ad83-e31792a2bff0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wAuunUjbgwmrKyUR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3c417487-44bf-4e43-8aa5-557dca8149cf",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        16
+      ],
+      "id": "6aa59db0-0acd-4c44-9317-a76b14f85173",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -928,
+        224
+      ],
+      "id": "668818d2-3d76-40f8-8b94-6ca2df74c7df",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kznPV1IOOhctr6ww",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        224
+      ],
+      "id": "31e62172-cf61-4186-ac37-a7358b918a3c",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kznPV1IOOhctr6ww",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://image.pollinations.ai/prompt/Professional%20LinkedIn%20post%20about%20AI%20automation?width=1024&height=1024",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        368,
+        0
+      ],
+      "id": "47e286f0-d9ca-4d42-bd2e-c0a5c19e2168",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {
+    "Post Text": [
+      {
+        "json": {
+          "output": "By 2026, AI agents are expected to play a pivotal role across industries by automating complex multi-step tasks, enhancing productivity, and improving decision-making. Driven by advancements in large language models and integrated memory, modern AI agents will offer sophisticated goal-directed behavior supporting both users and organizations. Companies like Google, Microsoft, and Amazon are investing in platforms for deploying autonomous and semi-autonomous AI agents, streamlining workflows from scheduling meetings to managing entire business processes. As agentic AI capabilities mature, collaborative standards and orchestration patterns will ensure safe, scalable deployment. Initiatives like the Agentic AI Foundation aim to foster transparent development for a secure and interoperable AI ecosystem.\n\n#aiagents #automation #futureofwork #ai2026"
+        }
+      }
+    ],
+    "Post Prompt": [
+      {
+        "json": {
+          "output": "Create a clean, futuristic LinkedIn post image showing AI agents seamlessly integrating into diverse industries. Visualize interconnected workflows with abstract lines or nodes representing automation, major tech company logos subtly included, and elements symbolizing productivity, collaboration, and secure scalable deployment."
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "On form submission": [
+      {
+        "json": {
+          "Idea": "AI agents role in 2026",
+          "submittedAt": "2026-06-21T13:15:08.229+05:00",
+          "formMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Create a post": [
+      {
+        "json": {
+          "name": "First item",
+          "code": 1
+        }
+      },
+      {
+        "json": {
+          "name": "Second item",
+          "code": 2
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Post Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "Post Text",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Text": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Prompt": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Post Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Post Text",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Post Prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "d5bf55ac-f023-438d-bf0a-cb35119e864e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "175ae21a8ce91d59738dba2ce73d37504c236446a4a9c4d3ca1a09b5c49ac6de"
+  },
+  "nodeGroups": [],
+  "id": "L1XPyUDSOPlqwjtj",
+  "tags": []
+}

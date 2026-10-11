@@ -1,0 +1,233 @@
+{
+  "name": "AI Agent News + Image to Facebook .1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "0b2d9fe5-1d9b-407d-8c44-4d73dc0f98f8",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=%22AI+agent%22+when:2d&hl=en-US&gl=US&ceid=US:en",
+        "options": {}
+      },
+      "id": "b8c0bebc-924f-4999-992b-ad8823944a18",
+      "name": "Read AI Agent News",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "cf31956f-aa9e-4682-9fd6-d155951c47ef",
+      "name": "Keep Latest",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://gen.pollinations.ai/image/futuristic%20AI%20robot%20working%20on%20a%20laptop",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "flux"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "a37c9d47-aa42-45d7-832b-74dc0edf4965",
+      "name": "Generate Robot Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "httpTemplatedCustomAuth": {
+          "id": "xq627qNh1MDBS7lG",
+          "name": "Pollinations API Key (sadi)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "1281388131732949",
+        "edge": "photos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "source:data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "caption",
+                "value": "=🤖 Latest AI Agent News:\n\n{{ $('Keep Latest').item.json.title }}\n\nRead more: {{ $('Keep Latest').item.json.link }}\n\n#AI #AIAgents #TechNews"
+              }
+            ]
+          }
+        }
+      },
+      "id": "bfe6c8f1-c443-466a-8aa6-1b116e7cacc1",
+      "name": "Post Photo To Facebook",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        896,
+        0
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "GUKNJSupoImiwiDZ",
+          "name": "Facebook Graph account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb-post-id",
+              "name": "facebookPostId",
+              "type": "string",
+              "value": "={{ $json.post_id || $json.id }}"
+            },
+            {
+              "id": "news-title",
+              "name": "newsTitle",
+              "type": "string",
+              "value": "={{ $('Keep Latest').item.json.title }}"
+            },
+            {
+              "id": "news-link",
+              "name": "newsLink",
+              "type": "string",
+              "value": "={{ $('Keep Latest').item.json.link }}"
+            },
+            {
+              "id": "posted-caption",
+              "name": "postedCaption",
+              "type": "string",
+              "value": "=🤖 Latest AI Agent News:\n\n{{ $('Keep Latest').item.json.title }}\n\nRead more: {{ $('Keep Latest').item.json.link }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9b7655d3-34ff-4390-81d3-8073c78d1d23",
+      "name": "Post Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Read AI Agent News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read AI Agent News": {
+      "main": [
+        [
+          {
+            "node": "Keep Latest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Latest": {
+      "main": [
+        [
+          {
+            "node": "Generate Robot Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Robot Image": {
+      "main": [
+        [
+          {
+            "node": "Post Photo To Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Photo To Facebook": {
+      "main": [
+        [
+          {
+            "node": "Post Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c947fbdf-91cf-4784-ad1c-03b4d9dda762",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fee44b896fb8318f77a93ed57fe46672836c216e20bcae8d78eeea922bec96a4"
+  },
+  "nodeGroups": [],
+  "id": "Vhth6MXzO8LpIVsU",
+  "tags": []
+}
